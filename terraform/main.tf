@@ -91,7 +91,7 @@ module "api_gateway" {
 
     "POST /" = {
       lambda_arn             = module.lambda_function.lambda_function_arn
-      payload_format_version = "1.0"
+      payload_format_version = "1.0" // posts seem to require payload format version 1.0
       timeout_milliseconds   = 12000
     }
 
