@@ -1,0 +1,5 @@
+/.aws-sam
+/cmd/lambda/main
+/terraform/.terraform
+/terraform/builds
+/terraform/terraform.tfstate*
