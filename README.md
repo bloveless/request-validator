@@ -1,6 +1,6 @@
 # Request Validator
 
-This example app showcases using `aws-lambda-go-api-proxy` in order reduce code duplication. You'll notice that cmd/http/main.go and cmd/lambda/main.go are incredibly simple and delegate almost all the code to a standard chi router.
+This example app showcases using `aws-lambda-go-api-proxy` in order reduce code duplication. You'll notice that `cmd/http/main.go` and `cmd/lambda/main.go` are incredibly simple and delegate almost all the code to a standard chi router.
 
 It also uses `gookit/validate` to do request validation. Validation are currently in `router.go` for simplicity.
 
