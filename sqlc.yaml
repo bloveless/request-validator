@@ -1,0 +1,11 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "sql/queries/"
+    schema: "sql/common/"
+    gen:
+      go:
+        package: "models"
+        out: "models"
+        sql_package: "pgx/v5"
+        emit_db_tags: true

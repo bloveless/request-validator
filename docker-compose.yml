@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:14.4-bullseye
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+
+  flyway:
+    image: flyway/flyway:9.12
+    volumes:
+      - ./sql:/flyway/sql
+    command:
+      - migrate
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgres:5432/postgres
+      FLYWAY_USER: postgres
+      FLYWAY_PASSWORD: postgres
+      FLYWAY_LOCATIONS: filesystem:./sql/common,filesystem:./sql/local_seed_data
