@@ -11,14 +11,14 @@ import ExternalApi from "./views/ExternalApi";
 import {useAuth0} from "@auth0/auth0-react";
 import history from "./utils/history";
 import {fromCognitoIdentityPool} from "@aws-sdk/credential-providers";
-import {STSClient, GetCallerIdentityCommand} from "@aws-sdk/client-sts";
+import {DynamoDBClient, GetItemCommand} from "@aws-sdk/client-dynamodb";
+import {GetCallerIdentityCommand, STSClient} from "@aws-sdk/client-sts";
 
 // styles
 import "./App.css";
 
 // fontawesome
 import initFontAwesome from "./utils/initFontAwesome";
-import {caller} from "express";
 
 initFontAwesome();
 
@@ -34,20 +34,48 @@ const App = () => {
     }
 
     getIdTokenClaims().then((token) => {
-        console.log('idToken', token)
-        const stsClient = new STSClient({
-            credentials: fromCognitoIdentityPool({
+        if (token) {
+            console.log('idToken', token);
+            const credentials = fromCognitoIdentityPool({
                 identityPoolId: "us-west-2:873773ee-0d22-4891-a90b-3221f5d1e517",
                 customRoleArn: "arn:aws:iam::391324319136:role/cognito-admin-authenticated",
                 logins: {
-                    "dev-kjqsk80b2mpf2n3b.us.auth0.com": String(token),
+                    "dev-kjqsk80b2mpf2n3b.us.auth0.com": token.__raw,
                 },
+                clientConfig: {region: 'us-west-2'},
             })
-        })
 
-        stsClient.send(new GetCallerIdentityCommand({})).then((callerIdentity) => {
-            console.log('callerIdentity', callerIdentity);
-        });
+            const dynamoClient = new DynamoDBClient({
+                region: "us-west-2",
+                credentials,
+            })
+
+            // Set the parameters
+            const params = {
+                TableName: "Stocks-a781d5cd",
+                Key: {
+                    PK: {S: "stockvalue#CDNS"},
+                    SK: {S: "2023-01-27T18:00:00Z"},
+                },
+            };
+
+            dynamoClient.send(new GetItemCommand(params)).then((item) => {
+                console.log('dynamo item', item)
+            }).catch((err) => {
+                console.log('dynamo err', err);
+            });
+
+            const stsClient = new STSClient({
+                region: "us-west-2",
+                credentials,
+            })
+
+            stsClient.send(new GetCallerIdentityCommand({})).then((identity) => {
+                console.log("identity", identity);
+            }).catch((stsErr) => {
+                console.log('stsErr', stsErr);
+            });
+        }
     });
 
 
