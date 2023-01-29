@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/gookit/validate"
 )
 
@@ -24,6 +25,16 @@ func NewRouter() *chi.Mux {
 	router.Use(middleware.RealIP)
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
+
+	// CORS is ignored by API Gateway but this probably needs to be here for local development
+	router.Use(cors.Handler(cors.Options{
+		AllowOriginFunc:  AllowOriginFunc,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300, // Maximum value not ignored by any of major browsers
+	}))
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("Hello"))
@@ -63,4 +74,8 @@ func NewRouter() *chi.Mux {
 	})
 
 	return router
+}
+
+func AllowOriginFunc(r *http.Request, origin string) bool {
+	return true
 }

@@ -13,12 +13,15 @@ import history from "./utils/history";
 import {fromCognitoIdentityPool} from "@aws-sdk/credential-providers";
 import {DynamoDBClient, GetItemCommand} from "@aws-sdk/client-dynamodb";
 import {GetCallerIdentityCommand, STSClient} from "@aws-sdk/client-sts";
+import axios from "axios";
+
 
 // styles
 import "./App.css";
 
 // fontawesome
 import initFontAwesome from "./utils/initFontAwesome";
+import aws4Interceptor from "./aws4Interceptor";
 
 initFontAwesome();
 
@@ -46,54 +49,70 @@ const App = () => {
             })
 
             const dynamoClient = new DynamoDBClient({
-                region: "us-west-2",
-                credentials,
+                region: "us-west-2", credentials,
             })
 
             // Set the parameters
             const params = {
-                TableName: "Stocks-a781d5cd",
-                Key: {
-                    PK: {S: "stockvalue#CDNS"},
-                    SK: {S: "2023-01-27T18:00:00Z"},
+                TableName: "Stocks-a781d5cd", Key: {
+                    PK: {S: "stockvalue#CDNS"}, SK: {S: "2023-01-27T18:00:00Z"},
                 },
             };
 
             dynamoClient.send(new GetItemCommand(params)).then((item) => {
                 console.log('dynamo item', item)
             }).catch((err) => {
-                console.log('dynamo err', err);
+                console.error('dynamo err', err);
             });
 
             const stsClient = new STSClient({
-                region: "us-west-2",
-                credentials,
+                region: "us-west-2", credentials,
             })
 
             stsClient.send(new GetCallerIdentityCommand({})).then((identity) => {
                 console.log("identity", identity);
             }).catch((stsErr) => {
-                console.log('stsErr', stsErr);
+                console.error('stsErr', stsErr);
             });
+
+            credentials().then((creds) => {
+                const client = axios.create();
+                const interceptor = new aws4Interceptor({
+                    signingUrl: "https://gqpkz5upmj.execute-api.us-west-2.amazonaws.com",
+                    // signingUrl: "https://api.brennonloveless.com",
+                    service: 'execute-api',
+                    region: 'us-west-2'
+                }, {
+                    accessKeyId: creds.accessKeyId,
+                    secretAccessKey: creds.secretAccessKey,
+                    sessionToken: creds.sessionToken,
+                });
+
+                client.interceptors.request.use(interceptor);
+                let url = "https://api.brennonloveless.com";
+                client.get(url).then((response) => {
+                    console.log(response);
+                    return response
+                }).catch(function (error) {
+                    console.error('api request err', error)
+                });
+            })
         }
     });
 
-
-    return (
-        <Router history={history}>
-            <div id="app" className="d-flex flex-column h-100">
-                <NavBar/>
-                <Container className="flex-grow-1 mt-5">
-                    <Switch>
-                        <Route path="/" exact component={Home}/>
-                        <Route path="/profile" component={Profile}/>
-                        <Route path="/external-api" component={ExternalApi}/>
-                    </Switch>
-                </Container>
-                <Footer/>
-            </div>
-        </Router>
-    );
+    return (<Router history={history}>
+        <div id="app" className="d-flex flex-column h-100">
+            <NavBar/>
+            <Container className="flex-grow-1 mt-5">
+                <Switch>
+                    <Route path="/" exact component={Home}/>
+                    <Route path="/profile" component={Profile}/>
+                    <Route path="/external-api" component={ExternalApi}/>
+                </Switch>
+            </Container>
+            <Footer/>
+        </div>
+    </Router>);
 };
 
 export default App;
